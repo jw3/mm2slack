@@ -1,13 +1,13 @@
 package mm2s
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.{ByteString, Timeout}
-import mm2s.ExportBot.ExportChannel
+import mm2s.ExportBot.{ExportChannel, _}
 import mm2s.conversions.ChannelConversion
 import mm4s.api.ChannelModels.ChannelListing
 import mm4s.api.Streams._
@@ -23,6 +23,9 @@ object ExportBot {
 
   case class ExportChannel(channelId: String)
 
+  def temppath(chid: String): Path = {
+    Paths.get(s"/tmp/slack-channel-$chid.json")
+  }
 }
 
 class ExportBot extends Actor with Bot with ActorLogging {
@@ -52,7 +55,12 @@ class ExportBot extends Actor with Bot with ActorLogging {
             case _ ⇒ None
           }
           .flatMapMerge(3, ch ⇒ Source.fromIterator(() ⇒ ch.iterator).map(_.prettyPrint).map(ByteString(_)))
-          .runWith(FileIO.toPath(Paths.get(s"/tmp/slack-channel-$chid.json")))
+          .runWith(FileIO.toPath(temppath(chid)))
+        }.map {
+          case r if r.wasSuccessful ⇒
+            api ! Post(s"Download available at ${temppath(chid)}") // representative availability response for now, eventually this is a hyperlink
+          case r ⇒
+            api ! Post(s"Failed to produce export, ${r.getError.getMessage}")
         }
     }
   }
