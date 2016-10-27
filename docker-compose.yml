@@ -5,10 +5,6 @@ mattermost:
 
 initializer:
   image: jwiii/mm4s-init:0.1
-  dns:
-    - "172.17.0.1"
-  dns_search:
-    - "service.consul"
   links:
     - "mattermost"
   entrypoint: /mm4s/bin/wait-for-it.sh -t 60 mattermost:80 -- /mm4s/bin/mmaccounts.sh
