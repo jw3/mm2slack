@@ -1,10 +1,10 @@
 mattermost:
-  image: mattermost/platform:2.2
+  image: jwiii/mattermost:2.2
   ports:
     - "8080:80"
 
 initializer:
-  image: jwiii/mmm4s-init:0.1
+  image: jwiii/mm4s-init:0.1
   dns:
     - "172.17.0.1"
   dns_search:
